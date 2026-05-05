@@ -12,6 +12,7 @@ function updateTabBadges(){
 }
 
 function renderPool(){
+  if(!document.getElementById('pool-columns')) return;
   renderStatsBar('pool-stats');
   var pool=issues.filter(function(i){return !i.confirmedResolved;});
   if(poolTagFilter!=='all') pool=pool.filter(function(i){return i.tags.indexOf(poolTagFilter)>=0;});
@@ -232,8 +233,8 @@ async function confirmClaim(){
     issue.claimedBy=claimed;
     toast(claimSelUnit+' 已認領此問題','ok');
     closeModal('modal-claim');
-    openIssueDetail(activeIssueId);
-    renderPool(); updateTabBadges();
+    closeModal('modal-issue-detail');
+    renderPool(); renderProcess(); updateTabBadges();
   }catch(e){toast('認領失敗：'+e.message,'err');console.error(e);}
   btn.disabled=false; btn.textContent='確認認領';
 }

@@ -73,7 +73,9 @@ function setScoreBtn(type,val){
 function renderMiniList(unit){
   var list=issues.filter(function(i){return i.unit===unit;});
   var el=document.getElementById('report-mini-list');
-  document.getElementById('report-mini-hd').textContent=unit+' 的問題清單（'+list.length+' 個）';
+  var hdEl=document.getElementById('report-mini-hd');
+  if(!el||!hdEl) return;
+  hdEl.textContent=unit+' 的問題清單（'+list.length+' 個）';
   if(!list.length){el.innerHTML='<div class="empty" style="padding:14px;font-size:13px">尚無問題</div>';return;}
   el.innerHTML='';
   list.forEach(function(i){

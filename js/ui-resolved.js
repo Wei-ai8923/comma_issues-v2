@@ -1,5 +1,6 @@
 // ── RESOLVED ──
 function renderResolved(){
+  if(!document.getElementById('res-grid')) return;
   renderStatsBar('resolved-stats');
   var res=issues.filter(function(i){return i.confirmedResolved;});
   var ftEl=document.getElementById('res-filters'); ftEl.innerHTML='';

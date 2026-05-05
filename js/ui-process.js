@@ -1,5 +1,6 @@
 // ── PROCESS ──
 function renderProcess(){
+  if(!document.getElementById('process-grid')) return;
   var grid=document.getElementById('process-grid'); grid.innerHTML='';
   var hasSth=false;
   ALL_BRANCHES.forEach(function(b){

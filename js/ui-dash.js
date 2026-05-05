@@ -1,5 +1,6 @@
 // ── DASHBOARD ──
 function renderDash(){
+  if(!document.getElementById('month-grid')) return;
   renderStatsBar('dash-stats');
   var now=new Date();
   var mg=document.getElementById('month-grid'); mg.innerHTML='';

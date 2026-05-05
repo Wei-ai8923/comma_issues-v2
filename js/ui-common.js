@@ -102,10 +102,10 @@ async function clearPage(page){
 
   issues = issues.filter(function(i){ return toDelete.indexOf(i.id) < 0; });
   toast('已清除 ' + toDelete.length + ' 筆資料', 'ok');
-  renderReportOverview();
-  renderPool();
-  updateTabBadges();
-  renderProcess();
-  renderDash();
-  renderResolved();
+  try{ renderReportOverview(); }catch(e){}
+  try{ renderPool(); }catch(e){}
+  try{ updateTabBadges(); }catch(e){}
+  try{ renderProcess(); }catch(e){}
+  try{ renderDash(); }catch(e){}
+  try{ renderResolved(); }catch(e){}
 }
