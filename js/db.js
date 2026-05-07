@@ -21,6 +21,7 @@ function mapRow(x){
     tags:x.tags||[], tagsCustom:x.tags_custom||'',
     urgency:typeof x.urgency==='number'?x.urgency:0,
     importance:typeof x.importance==='number'?x.importance:0,
+    deadline:x.deadline||'', keyResult:x.key_result||'',
     claimedBy:x.claimed_by||[],
     solutions:x.solutions||[],
     confirmedBy:x.confirmed_by||[],
@@ -37,6 +38,7 @@ async function saveIssueDB(issue){
     tags:issue.tags, tags_custom:issue.tagsCustom,
     urgency:issue.urgency, importance:issue.importance,
     claimed_by:[], solutions:[], confirmed_by:[],
+    deadline:issue.deadline||null, key_result:issue.keyResult||null,
     resolved:false, confirmed_resolved:false,
     resolved_at:null, created_at:issue.createdAt
   });
@@ -65,15 +67,3 @@ async function uploadFile(file, issueId){
   return {name:file.name, url:pub.data.publicUrl, path:path};
 }
 
-
-// ── DELETE ──
-async function deleteIssue(id){
-  var r = await sb.from('issues').delete().eq('id', id);
-  if(r.error){ toast('刪除失敗','err'); return; }
-  issues = issues.filter(function(i){ return i.id !== id; });
-  toast('問題已刪除','ok');
-  renderReportOverview();
-  renderPool();
-  updateTabBadges();
-  renderDash();
-}

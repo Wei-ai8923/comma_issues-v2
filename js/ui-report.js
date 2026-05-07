@@ -2,8 +2,9 @@
 function renderReportOverview(){
   renderStatsBar('report-stats');
   var groups=[
-    {level:'hsjh',label:'國高中部',cls:'bgl-hsjh',branches:BRANCHES_HSJH_DATA},
-    {level:'es',label:'國小部',cls:'bgl-es',branches:BRANCHES_ES_DATA}
+    {level:'hq',label:'總部',cls:'bgl-hsjh',branches:[{name:'芸諺'},{name:'乙凡'},{name:'NiNi'},{name:'Sherry'},{name:'珊姐'}]},
+    {level:'es',label:'國小部',cls:'bgl-es',branches:BRANCHES_ES_DATA},
+    {level:'hsjh',label:'國高中部',cls:'bgl-hsjh',branches:BRANCHES_HSJH_DATA}
   ];
   var container=document.getElementById('report-overview');
   container.innerHTML='';
@@ -36,6 +37,8 @@ function openReportModal(unit){
   else logoEl.style.display='none';
   selTags=[]; urgencyVal=-1; importanceVal=-1;
   document.getElementById('f-content').value='';
+  document.getElementById('f-deadline').value='';
+  document.getElementById('f-key-result').value='';
   initTagChips(); clearScoreBtns('urgency'); clearScoreBtns('importance');
   renderMiniList(unit);
   openModal('modal-report');
@@ -100,6 +103,12 @@ async function submitIssue(){
   if(selTags.length===0){toast('請選擇至少一個標籤','err');return;}
   if(urgencyVal<0){toast('請選擇緊急度','err');return;}
   if(importanceVal<0){toast('請選擇重要性','err');return;}
+  var deadlineRaw=document.getElementById('f-deadline').value;
+  if(!deadlineRaw){toast('請選擇期望解決日期','err');return;}
+  var dParts=deadlineRaw.split('-');
+  var deadline=parseInt(dParts[1])+'月'+parseInt(dParts[2])+'號';
+  var keyResult=document.getElementById('f-key-result').value.trim();
+  if(!keyResult){toast('\u8acb\u586b\u5beb\u95dc\u9375\u6210\u679c','err');return;}
   var tagsCustom=selTags.indexOf('其他')>=0?document.getElementById('f-tag-other').value.trim():'';
   var btn=document.getElementById('submit-btn');
   btn.disabled=true; btn.textContent='提報中...';
@@ -107,6 +116,7 @@ async function submitIssue(){
     id:Date.now().toString(), unit:reportUnit, content:content,
     tags:selTags.slice(), tagsCustom:tagsCustom,
     urgency:urgencyVal, importance:importanceVal,
+    deadline:deadline, keyResult:keyResult,
     claimedBy:[], solutions:[], confirmedBy:[],
     resolved:false, confirmedResolved:false,
     resolvedAt:null, createdAt:new Date().toISOString()
@@ -116,6 +126,8 @@ async function submitIssue(){
     issues.unshift(issue);
     toast('問題已提報！','ok');
     document.getElementById('f-content').value='';
+    document.getElementById('f-deadline').value='';
+    document.getElementById('f-key-result').value='';
     selTags=[]; initTagChips(); clearScoreBtns('urgency'); clearScoreBtns('importance');
     urgencyVal=-1; importanceVal=-1;
     renderMiniList(reportUnit); renderReportOverview(); updateTabBadges();

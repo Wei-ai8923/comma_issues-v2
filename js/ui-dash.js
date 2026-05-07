@@ -21,6 +21,8 @@ function renderDash(){
   var selI=issues.filter(function(i){var d=new Date(i.createdAt);return d.getMonth()===selMonth&&d.getFullYear()===curYear;});
   document.getElementById('dash-month-title').textContent=(selMonth+1)+'月份問題分析（'+selI.length+' 個）';
   drawQuadrant(selI);
+  renderBranchStats();
+  renderRanking();
 }
 
 function drawQuadrant(data){
@@ -127,3 +129,74 @@ function drawQuadrant(data){
   container.appendChild(svg);
 }
 
+
+// ── BRANCH STATS ──
+function renderBranchStats(){
+  var grid = document.getElementById('branch-stats-grid');
+  if(!grid) return;
+  grid.innerHTML = '';
+  ALL_BRANCHES.forEach(function(b){
+    // 提出問題總數
+    var submitted = issues.filter(function(i){ return i.unit === b; }).length;
+    // 認領中（該分校被認領但尚未解決）
+    var claiming = issues.filter(function(i){
+      return !i.confirmedResolved && i.claimedBy && i.claimedBy.indexOf(b) >= 0;
+    }).length;
+    // 幫忙解決的問題（該分校認領 且 提出者確認有效）
+    var solved = issues.filter(function(i){
+      return i.confirmedResolved && i.claimedBy && i.claimedBy.indexOf(b) >= 0;
+    }).length;
+    // 解決率 = 已解決 / (已解決 + 認領中)
+    var total = solved + claiming;
+    var rate = total > 0 ? Math.round(solved / total * 100) : 0;
+
+    var card = document.createElement('div');
+    card.className = 'branch-stat-card';
+    var logoHtml = LOGOS[b]
+      ? '<img src="'+LOGOS[b]+'" class="bsc-logo">'
+      : '<div class="bsc-logo-ph"></div>';
+    card.innerHTML = logoHtml
+      + '<div class="bsc-name">'+b+'</div>'
+      + '<div class="bsc-row"><span class="bsc-label">提出問題</span><span class="bsc-val">'+submitted+'</span></div>'
+      + '<div class="bsc-row"><span class="bsc-label">認領中</span><span class="bsc-val bsc-og">'+claiming+'</span></div>'
+      + '<div class="bsc-row"><span class="bsc-label">幫助解決</span><span class="bsc-val bsc-gn">'+solved+'</span></div>'
+      + '<div class="bsc-row"><span class="bsc-label">解決率</span><span class="bsc-val bsc-pu">'+(total>0?rate+'%':'—')+'</span></div>';
+    grid.appendChild(card);
+  });
+}
+
+// ── RANKING ──
+function renderRanking(){
+  var board = document.getElementById('ranking-board');
+  if(!board) return;
+  var stats = ALL_BRANCHES.map(function(b){
+    var solved = issues.filter(function(i){
+      return i.confirmedResolved && i.claimedBy && i.claimedBy.indexOf(b) >= 0;
+    }).length;
+    var claiming = issues.filter(function(i){
+      return !i.confirmedResolved && i.claimedBy && i.claimedBy.indexOf(b) >= 0;
+    }).length;
+    var total = solved + claiming;
+    var rate = total > 0 ? Math.round(solved / total * 100) : 0;
+    return {name:b, solved:solved, claiming:claiming, rate:rate};
+  });
+  stats.sort(function(a,b){ return b.solved - a.solved || b.rate - a.rate; });
+
+  var medals = ['🥇','🥈','🥉'];
+  board.innerHTML = '';
+  var list = document.createElement('div');
+  list.className = 'ranking-list';
+  stats.forEach(function(s, idx){
+    var row = document.createElement('div');
+    row.className = 'ranking-row' + (idx < 3 ? ' ranking-top' : '');
+    var medal = idx < 3 ? '<span class="ranking-medal">'+medals[idx]+'</span>' : '<span class="ranking-num">'+(idx+1)+'</span>';
+    var logoHtml = LOGOS[s.name] ? '<img src="'+LOGOS[s.name]+'" class="ranking-logo">' : '';
+    row.innerHTML = medal + logoHtml
+      + '<span class="ranking-name">'+s.name+'</span>'
+      + '<span class="ranking-stat"><b>'+s.solved+'</b> 題解決</span>'
+      + '<span class="ranking-stat bsc-pu">'+( (s.solved+s.claiming)>0 ? s.rate+'%' : '—' )+'</span>'
+      + '<span class="ranking-stat bsc-og">認領中 '+s.claiming+'</span>';
+    list.appendChild(row);
+  });
+  board.appendChild(list);
+}

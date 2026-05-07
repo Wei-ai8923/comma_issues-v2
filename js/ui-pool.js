@@ -9,6 +9,9 @@ function updateTabBadges(){
   });
   var tp=document.getElementById('tab-process');
   if(tp) tp.textContent='問題處理區'+(pc?' ('+pc+')':'');
+  var resolved=issues.filter(function(i){return i.confirmedResolved;}).length;
+  var tr=document.getElementById('tab-resolved');
+  if(tr) tr.textContent='已解決問題'+(resolved?' ('+resolved+')':'');
 }
 
 function renderPool(){
@@ -76,16 +79,6 @@ function buildPoolCard(issue){
     sl.textContent='✏ '+sols.length+' 個解法'; ft.appendChild(sl);
   }
   card.appendChild(ft);
-  // 刪除按鈕
-  var delBtn = document.createElement('button');
-  delBtn.className = 'btn-delete-card';
-  delBtn.textContent = '✕ 刪除此問題';
-  delBtn.onclick = (function(id){ return function(e){
-    e.stopPropagation();
-    if(!confirm('確定要刪除這個問題嗎？刪除後無法復原。')) return;
-    deleteIssue(id);
-  };})(issue.id);
-  card.appendChild(delBtn);
   return card;
 }
 
@@ -147,7 +140,11 @@ function openIssueDetail(id){
 
   var actionBtns='';
   if(!issue.confirmedResolved){
-    actionBtns='<button class="btn btn-gn" onclick="openClaimModal()" style="margin-top:14px;width:100%">選擇解決這題的分校</button>';
+    if(issue.claimedBy && issue.claimedBy.length > 0){
+      actionBtns='<div style="margin-top:14px;padding:10px;background:var(--bg3);border-radius:var(--rs);font-size:13px;color:var(--tx2);text-align:center">▶ <b>'+issue.claimedBy[0]+'</b> 認領處理中</div>';
+    } else {
+      actionBtns='<button class="btn btn-gn" onclick="openClaimModal()" style="margin-top:14px;width:100%">選擇解決這題的分校</button>';
+    }
   }
 
   document.getElementById('issue-detail-body').innerHTML=
@@ -156,6 +153,8 @@ function openIssueDetail(id){
     +(LOGOS[issue.unit]?'<img src="'+LOGOS[issue.unit]+'" style="width:26px;height:26px;border-radius:50%;object-fit:cover">':'')
     +'<b>'+issue.unit+'</b><span style="font-size:12px;color:var(--tx3);margin-left:auto">'+fmtDate(d)+'</span></div>'
     +'<div style="font-size:15px;line-height:1.7;margin-bottom:10px">'+issue.content+'</div>'
+    +(issue.deadline?'<div style="margin-bottom:6px;font-size:13px"><span style="color:var(--tx3)">📅 期望解決：</span><b>'+issue.deadline+'</b></div>':'')
+    +(issue.keyResult?'<div style="margin-bottom:10px;font-size:13px"><span style="color:var(--tx3)">🎯 關鍵成果：</span><b>'+issue.keyResult+'</b></div>':'')
     +'<div style="display:flex;gap:10px">'
     +'<span style="font-size:13px;background:var(--bg3);padding:4px 10px;border-radius:8px">緊急 <b>'+issue.urgency+'/5</b></span>'
     +'<span style="font-size:13px;background:var(--bg3);padding:4px 10px;border-radius:8px">重要 <b>'+issue.importance+'/5</b></span>'
@@ -195,8 +194,9 @@ function openClaimModal(){
   if(!issue) return;
   var body=document.getElementById('claim-unit-body'); body.innerHTML='';
   var groups=[
-    {label:'國高中部',cls:'bgl-hsjh',units:['青埔升大校','大園參天校','園中方舟校','中壢心夢想校','青埔旭日校']},
-    {label:'國小部',cls:'bgl-es',units:['青埔翱翔校','青園展翅校','大園晨光校','快樂騰雲校','文化極光校','內壢森耀校','竹北知行校']}
+    {label:'總部',cls:'bgl-hsjh',units:['芸諺','乙凡','NiNi','Sherry','珊姐']},
+    {label:'國小部',cls:'bgl-es',units:['青埔翱翔校','青園展翅校','大園晨光校','快樂騰雲校','文化極光校','內壢森耀校','竹北知行校']},
+    {label:'國高中部',cls:'bgl-hsjh',units:['青埔升大校','大園參天校','園中方舟校','中壢心夢想校','青埔旭日校']}
   ];
   groups.forEach(function(g){
     var grp=document.createElement('div'); grp.className='usel-group';
@@ -204,7 +204,6 @@ function openClaimModal(){
     grp.appendChild(lbl);
     var grid=document.createElement('div'); grid.className='usel-grid';
     g.units.forEach(function(u){
-      if(u===issue.unit) return;
       var card=document.createElement('div'); card.className='usel-card';
       if(LOGOS[u]){var img=document.createElement('img');img.src=LOGOS[u];card.appendChild(img);}
       else{var ph=document.createElement('div');ph.className='ph-sm';ph.textContent='騰';card.appendChild(ph);}

@@ -73,39 +73,6 @@ async function init(){
 init();
 
 
-// ── CLEAR PAGE ──
-async function clearPage(page){
-  var labels = {
-    'pool': '問題庫（所有未解決問題）',
-    'process': '問題處理區（認領中的問題）',
-    'dash': '所有問題資料',
-    'resolved': '已解決問題'
-  };
-  var label = labels[page] || page;
-  if(!confirm('確定要清除「' + label + '」的資料嗎？\n此操作無法復原。')) return;
-
-  var toDelete = [];
-  if(page === 'pool'){
-    toDelete = issues.filter(function(i){ return !i.confirmedResolved; }).map(function(i){ return i.id; });
-  } else if(page === 'process'){
-    toDelete = issues.filter(function(i){ return i.claimedBy && i.claimedBy.length && !i.confirmedResolved; }).map(function(i){ return i.id; });
-  } else if(page === 'dash'){
-    toDelete = issues.map(function(i){ return i.id; });
-  } else if(page === 'resolved'){
-    toDelete = issues.filter(function(i){ return i.confirmedResolved; }).map(function(i){ return i.id; });
-  }
-
-  if(!toDelete.length){ toast('沒有可清除的資料','ok'); return; }
-
-  var r = await sb.from('issues').delete().in('id', toDelete);
-  if(r.error){ toast('清除失敗：' + r.error.message, 'err'); return; }
-
-  issues = issues.filter(function(i){ return toDelete.indexOf(i.id) < 0; });
-  toast('已清除 ' + toDelete.length + ' 筆資料', 'ok');
-  try{ renderReportOverview(); }catch(e){}
-  try{ renderPool(); }catch(e){}
-  try{ updateTabBadges(); }catch(e){}
-  try{ renderProcess(); }catch(e){}
-  try{ renderDash(); }catch(e){}
-  try{ renderResolved(); }catch(e){}
+function handleOverlayClick(e, modalId){
+  if(e.target === e.currentTarget) closeModal(modalId);
 }
