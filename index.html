@@ -939,5 +939,13 @@ init();
     </div>
   </div>
 </div>
+
+<!-- 象限圖問題清單 Modal -->
+<div class="overlay" id="modal-quad-list" onclick="handleOverlayClick(event,'modal-quad-list')">
+  <div class="modal" style="max-width:460px;width:90%">
+    <div class="modal-hd"><span>此點的問題清單</span><button class="close-btn" onclick="closeModal('modal-quad-list')">✕</button></div>
+    <div class="modal-bd" id="quad-list-body" style="padding:0;max-height:60vh;overflow-y:auto"></div>
+  </div>
+</div>
 </body>
 </html>
