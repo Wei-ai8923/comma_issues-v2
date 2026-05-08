@@ -33,7 +33,13 @@ function renderPool(){
     colsEl.appendChild(buildPoolCol(poolTagFilter,pool));
   } else {
     var tagGroups={};
-    pool.forEach(function(i){var p=i.tags.length?i.tags[0]:'其他';if(!tagGroups[p])tagGroups[p]=[];tagGroups[p].push(i);});
+    pool.forEach(function(i){
+      var assignedTags=i.tags.length?i.tags:['其他'];
+      assignedTags.forEach(function(tag){
+        if(!tagGroups[tag]) tagGroups[tag]=[];
+        tagGroups[tag].push(i);
+      });
+    });
     TAGS.forEach(function(t){if(tagGroups[t]&&tagGroups[t].length)colsEl.appendChild(buildPoolCol(t,tagGroups[t]));});
   }
 }
