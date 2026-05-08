@@ -63,7 +63,7 @@ function buildPoolCol(tag,list){
 }
 
 function buildPoolCard(issue){
-  var card=document.createElement('div'); card.className='pcard';
+  var card=document.createElement('div'); card.className='pcard'+(issue.urgency>=5?' urgent-5':'');
   card.onclick=(function(id){return function(){openIssueDetail(id);};})(issue.id);
   var d=new Date(issue.createdAt);
   // Top row

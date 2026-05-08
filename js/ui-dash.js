@@ -72,40 +72,57 @@ function drawQuadrant(data){
   svg.appendChild(txt('不重要',padL-8,cy+4,'end','#aaa','13',true));
   svg.appendChild(txt('重要',W-padR+22,cy+4,'start','#0361bf','13',true));
 
-  // Dots with hover tooltip
+  // Dots: 合併同座標，圓圈依數量縮放，顯示數字
   var tooltip=document.getElementById('quad-tooltip');
-  // Count overlapping positions for jitter
-  var posCount={};
+  // 按座標分組
+  var groups={};
   data.forEach(function(issue){
     if(issue.confirmedResolved) return;
     var key=issue.urgency+'_'+issue.importance;
-    posCount[key]=(posCount[key]||0)+1;
+    if(!groups[key]) groups[key]={issues:[],urgency:issue.urgency,importance:issue.importance};
+    groups[key].issues.push(issue);
   });
-  var posIdx={};
-  data.forEach(function(issue){
-    if(issue.confirmedResolved) return;
-    var key=issue.urgency+'_'+issue.importance;
-    var total=posCount[key]||1;
-    var idx=posIdx[key]||0;
-    posIdx[key]=idx+1;
-    var baseX=padL+(issue.importance/5)*iw;
-    var baseY=padT+((5-issue.urgency)/5)*ih;
-    var jitter=total>1?14:0;
-    var angle=(idx/total)*Math.PI*2;
-    var dotX=baseX+(total>1?Math.cos(angle)*jitter:0);
-    var dotY=baseY+(total>1?Math.sin(angle)*jitter:0);
-    var color=issue.tags.length?(TAG_COLORS[issue.tags[0]]||'#0361bf'):'#0361bf';
+  Object.keys(groups).forEach(function(key){
+    var g=groups[key];
+    var count=g.issues.length;
+    var dotX=padL+(g.importance/5)*iw;
+    var dotY=padT+((5-g.urgency)/5)*ih;
+    // 半徑依數量：1個=11, 2個=14, 3+=16+
+    var r=Math.min(11+Math.sqrt(count-1)*5, 28);
+    // 顏色：多標籤時用最多的那個
+    var tagCount={};
+    g.issues.forEach(function(i){i.tags.forEach(function(t){tagCount[t]=(tagCount[t]||0)+1;});});
+    var topTag=Object.keys(tagCount).sort(function(a,b){return tagCount[b]-tagCount[a];})[0]||'';
+    var color=TAG_COLORS[topTag]||'#0361bf';
+    // 圓圈
     var circle=document.createElementNS(ns,'circle');
     circle.setAttribute('cx',dotX); circle.setAttribute('cy',dotY);
-    circle.setAttribute('r','11');
+    circle.setAttribute('r',String(r));
     circle.setAttribute('fill',color);
     circle.setAttribute('fill-opacity','0.88');
     circle.setAttribute('stroke','white'); circle.setAttribute('stroke-width','2');
     circle.style.cursor='pointer';
-    // Hover: show unit, tags, urgency, importance (NOT content)
+    // 數字（超過1個才顯示）
+    if(count>1){
+      var numTxt=document.createElementNS(ns,'text');
+      numTxt.textContent=String(count);
+      numTxt.setAttribute('x',String(dotX));
+      numTxt.setAttribute('y',String(dotY+4));
+      numTxt.setAttribute('text-anchor','middle');
+      numTxt.setAttribute('font-size',r>18?'13':'11');
+      numTxt.setAttribute('font-weight','700');
+      numTxt.setAttribute('fill','#fff');
+      numTxt.setAttribute('font-family','Noto Sans TC,sans-serif');
+      numTxt.style.pointerEvents='none';
+      svg.appendChild(circle);
+      svg.appendChild(numTxt);
+    } else {
+      svg.appendChild(circle);
+    }
+    // Hover tooltip
+    var allUnits=g.issues.map(function(i){return i.unit;}).join('、');
     circle.addEventListener('mouseenter',function(e){
-      var tagLabel=issue.tags.map(function(t){return t==='其他'&&issue.tagsCustom?issue.tagsCustom:t;}).join('、');
-      tooltip.innerHTML='<b>'+issue.unit+'</b><br>標籤：'+tagLabel+'<br>緊急度：'+issue.urgency+' / 重要性：'+issue.importance;
+      tooltip.innerHTML='<b>'+allUnits+'</b><br>緊急度：'+g.urgency+' / 重要性：'+g.importance+'<br>共 '+count+' 個問題';
       tooltip.style.display='block';
       tooltip.style.left=(e.clientX+14)+'px'; tooltip.style.top=(e.clientY-10)+'px';
     });
@@ -113,8 +130,13 @@ function drawQuadrant(data){
       tooltip.style.left=(e.clientX+14)+'px'; tooltip.style.top=(e.clientY-10)+'px';
     });
     circle.addEventListener('mouseleave',function(){tooltip.style.display='none';});
-    circle.addEventListener('click',(function(id){return function(){openIssueDetail(id);};})(issue.id));
-    svg.appendChild(circle);
+    // 點擊：一個直接開detail，多個開清單
+    circle.addEventListener('click',(function(grpIssues){
+      return function(){
+        if(grpIssues.length===1){ openIssueDetail(grpIssues[0].id); return; }
+        openQuadList(grpIssues);
+      };
+    })(g.issues));
   });
 
   var openData=data.filter(function(i){return !i.confirmedResolved;});
@@ -199,4 +221,26 @@ function renderRanking(){
     list.appendChild(row);
   });
   board.appendChild(list);
+}
+
+// ── QUAD LIST ──
+function openQuadList(issueList){
+  var body = document.getElementById('quad-list-body');
+  if(!body) return;
+  body.innerHTML = '';
+  issueList.forEach(function(issue){
+    var item = document.createElement('div');
+    item.className = 'quad-list-item';
+    var logoHtml = LOGOS[issue.unit] ? '<img src="'+LOGOS[issue.unit]+'" class="bsc-logo" style="width:28px;height:28px">' : '';
+    item.innerHTML = '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">'
+      + logoHtml
+      + '<span style="font-weight:700;font-size:13px">'+issue.unit+'</span>'
+      + '<span style="margin-left:auto;font-size:12px;color:var(--tx3)">緊急'+issue.urgency+' 重要'+issue.importance+'</span>'
+      + '</div>'
+      + '<div style="font-size:13px;color:var(--tx);line-height:1.6">'+issue.content+'</div>';
+    item.style.cssText='padding:12px;border-bottom:1px solid var(--bd);cursor:pointer;';
+    item.onclick=(function(id){return function(){closeModal('modal-quad-list');openIssueDetail(id);};})(issue.id);
+    body.appendChild(item);
+  });
+  openModal('modal-quad-list');
 }

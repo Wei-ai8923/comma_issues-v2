@@ -207,3 +207,6 @@ body{font-family:"Noto Sans TC",sans-serif;background:var(--bg);color:var(--tx);
 .ranking-logo{width:30px;height:30px;border-radius:50%;object-fit:cover;}
 .ranking-name{flex:1;font-weight:700;color:var(--tx);}
 .ranking-stat{min-width:80px;text-align:right;color:var(--tx2);}
+
+/* 緊急度5分紅框 */
+.pcard.urgent-5{border:2px solid #e74c3c !important;box-shadow:0 0 0 3px rgba(231,76,60,.12) !important;}
