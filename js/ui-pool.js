@@ -40,7 +40,12 @@ function renderPool(){
         tagGroups[tag].push(i);
       });
     });
-    TAGS.forEach(function(t){if(tagGroups[t]&&tagGroups[t].length)colsEl.appendChild(buildPoolCol(t,tagGroups[t]));});
+    TAGS.forEach(function(t){
+      if(tagGroups[t]&&tagGroups[t].length){
+        tagGroups[t].sort(function(a,b){return (b.urgency-a.urgency)||( b.importance-a.importance);});
+        colsEl.appendChild(buildPoolCol(t,tagGroups[t]));
+      }
+    });
   }
 }
 
@@ -165,9 +170,103 @@ function openIssueDetail(id){
     +'<span style="font-size:13px;background:var(--bg3);padding:4px 10px;border-radius:8px">緊急 <b>'+issue.urgency+'/5</b></span>'
     +'<span style="font-size:13px;background:var(--bg3);padding:4px 10px;border-radius:8px">重要 <b>'+issue.importance+'/5</b></span>'
     +'</div>'
-    +claimedHtml+solsHtml+actionBtns;
+    +claimedHtml+solsHtml+actionBtns
+    +'<div style="display:flex;gap:8px;margin-top:16px">'
+    +'<button class="btn btn-sm" style="flex:1;background:var(--bg3);color:var(--tx)" onclick="openEditIssue()">✏️ 編輯問題</button>'
+    +'<button class="btn btn-sm" style="flex:1;background:#fff0f0;color:var(--rd);border:1.5px solid var(--rd)" onclick="deleteActiveIssue()">🗑 刪除問題</button>'
+    +'</div>';
 
   openModal('modal-issue-detail');
+}
+
+function openEditIssue(){
+  var issue=issues.find(function(i){return i.id===activeIssueId;});
+  if(!issue) return;
+  // 填入現有資料
+  var dl=document.getElementById('edit-deadline');
+  if(issue.deadline){
+    // 把「6月15號」轉回 date input 格式
+    var today=new Date();
+    var yr=today.getFullYear();
+    var match=issue.deadline.match(/(\d+)月(\d+)/);
+    if(match){
+      var mo=String(parseInt(match[1])).padStart(2,'0');
+      var dy=String(parseInt(match[2])).padStart(2,'0');
+      dl.value=yr+'-'+mo+'-'+dy;
+    } else {
+      dl.value=issue.deadline;
+    }
+  } else { dl.value=''; }
+  document.getElementById('edit-content').value=issue.content||'';
+  document.getElementById('edit-key-result').value=issue.keyResult||'';
+  // 緊急度、重要度按鈕
+  ['urgency','importance'].forEach(function(type){
+    var row=document.getElementById('edit-'+type+'-row');
+    row.innerHTML='';
+    var cur=issue[type];
+    for(var v=0;v<=5;v++){
+      (function(val){
+        var btn=document.createElement('button');
+        btn.className='score-btn'+(cur===val?' on':'');
+        btn.textContent=val;
+        btn.setAttribute('data-type','edit-'+type);
+        btn.onclick=function(){
+          row.querySelectorAll('.score-btn').forEach(function(b){b.classList.remove('on');});
+          btn.classList.add('on');
+        };
+        row.appendChild(btn);
+      })(v);
+    }
+  });
+  closeModal('modal-issue-detail');
+  openModal('modal-edit-issue');
+}
+
+async function saveEditIssue(){
+  var issue=issues.find(function(i){return i.id===activeIssueId;});
+  if(!issue) return;
+  var deadlineRaw=document.getElementById('edit-deadline').value;
+  if(!deadlineRaw){toast('請選擇期望解決日期','err');return;}
+  var dParts=deadlineRaw.split('-');
+  var deadline=parseInt(dParts[1])+'月'+parseInt(dParts[2])+'號';
+  var content=document.getElementById('edit-content').value.trim();
+  if(!content){toast('請填寫問題詳述','err');return;}
+  var keyResult=document.getElementById('edit-key-result').value.trim();
+  if(!keyResult){toast('請填寫具體需要的幫助','err');return;}
+  var urgencyBtn=document.querySelector('#edit-urgency-row .score-btn.on');
+  var importanceBtn=document.querySelector('#edit-importance-row .score-btn.on');
+  if(!urgencyBtn){toast('請選擇緊急度','err');return;}
+  if(!importanceBtn){toast('請選擇重要性','err');return;}
+  var urgency=parseInt(urgencyBtn.textContent);
+  var importance=parseInt(importanceBtn.textContent);
+  try{
+    await patchDB(issue.id,{content:content, deadline:deadline, key_result:keyResult, urgency:urgency, importance:importance});
+    issue.content=content; issue.deadline=deadline; issue.keyResult=keyResult;
+    issue.urgency=urgency; issue.importance=importance;
+    toast('問題已更新','ok');
+    closeModal('modal-edit-issue');
+    try{renderPool();}catch(e){}
+    try{renderReportOverview();}catch(e){}
+  }catch(e){
+    toast('儲存失敗：'+e.message,'err');
+  }
+}
+
+async function deleteActiveIssue(){
+  var issue=issues.find(function(i){return i.id===activeIssueId;});
+  if(!issue) return;
+  if(!confirm('確定要刪除「'+issue.content.slice(0,20)+'...」這個問題嗎？\n刪除後無法復原。')) return;
+  var r=await sb.from('issues').delete().eq('id',activeIssueId);
+  if(r.error){toast('刪除失敗','err');return;}
+  issues=issues.filter(function(i){return i.id!==activeIssueId;});
+  toast('問題已刪除','ok');
+  closeModal('modal-issue-detail');
+  try{renderReportOverview();}catch(e){}
+  try{renderPool();}catch(e){}
+  try{updateTabBadges();}catch(e){}
+  try{renderProcess();}catch(e){}
+  try{renderDash();}catch(e){}
+  try{renderResolved();}catch(e){}
 }
 
 // ── CONFIRM SOLUTION → RESOLVE ──

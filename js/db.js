@@ -47,6 +47,11 @@ async function saveIssueDB(issue){
 
 async function patchDB(id, fields){
   var d = {};
+  if(fields.content!==undefined) d.content = fields.content;
+  if(fields.deadline!==undefined) d.deadline = fields.deadline;
+  if(fields.key_result!==undefined) d.key_result = fields.key_result;
+  if(fields.urgency!==undefined) d.urgency = fields.urgency;
+  if(fields.importance!==undefined) d.importance = fields.importance;
   if(fields.claimedBy!==undefined) d.claimed_by = fields.claimedBy;
   if(fields.solutions!==undefined) d.solutions = fields.solutions;
   if(fields.confirmedBy!==undefined) d.confirmed_by = fields.confirmedBy;

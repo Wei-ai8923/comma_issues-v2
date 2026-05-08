@@ -45,7 +45,7 @@
     </div>
     <div class="fg">
       <label class="flbl">問題內容 *</label>
-      <div class="fg"><label class="flbl">📅 期望解決日期</label><input type="date" class="fi" id="f-deadline"></div><div class="fg"><label class="flbl">📝 問題詳述</label><textarea class="fta" id="f-content" placeholder="詳細描述你遇到的問題..." style="min-height:90px"></textarea></div><div class="fg"><label class="flbl">🎯 關鍵成果（形容詞＋名詞）</label><input type="text" class="fi" id="f-key-result" placeholder="例如：滿班的國一先修班"></div>
+      <div class="fg"><label class="flbl">📅 期望解決日期 <span style="color:var(--rd)">*</span></label><input type="date" class="fi" id="f-deadline"></div><div class="fg"><label class="flbl">📝 問題詳述 <span style="color:var(--rd)">*</span></label><textarea class="fta" id="f-content" placeholder="詳細描述你遇到的問題..." style="min-height:90px"></textarea></div><div class="fg"><label class="flbl">🎯 需要的具體幫助？ <span style="color:var(--rd)">*</span></label><input type="text" class="fi" id="f-key-result" placeholder=""></div>
     </div>
     <div class="fg">
       <label class="flbl">緊急度（0=不緊急，5=非常緊急）</label>
@@ -919,5 +919,25 @@ init();
 <script src="js/ui-process.js"></script>
 <script src="js/ui-dash.js"></script>
 <script src="js/ui-resolved.js"></script>
+
+<!-- 編輯問題 Modal -->
+<div class="overlay" id="modal-edit-issue" onclick="handleOverlayClick(event,'modal-edit-issue')">
+  <div class="modal" style="max-width:480px;width:90%">
+    <div class="modal-hd"><span>✏️ 編輯問題</span><button class="close-btn" onclick="closeModal('modal-edit-issue')">✕</button></div>
+    <div class="modal-bd">
+      <div class="fg"><label class="flbl">📅 期望解決日期 <span style="color:var(--rd)">*</span></label>
+        <input type="date" class="fi" id="edit-deadline"></div>
+      <div class="fg"><label class="flbl">📝 問題詳述 <span style="color:var(--rd)">*</span></label>
+        <textarea class="fta" id="edit-content" style="min-height:90px"></textarea></div>
+      <div class="fg"><label class="flbl">🎯 需要的具體幫助？ <span style="color:var(--rd)">*</span></label>
+        <input type="text" class="fi" id="edit-key-result"></div>
+      <div class="fg"><label class="flbl">緊急度 <span style="color:var(--rd)">*</span></label>
+        <div class="score-btns" id="edit-urgency-row"></div></div>
+      <div class="fg"><label class="flbl">重要性 <span style="color:var(--rd)">*</span></label>
+        <div class="score-btns" id="edit-importance-row"></div></div>
+      <button class="btn btn-bl" style="width:100%;margin-top:8px" onclick="saveEditIssue()">儲存變更</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>

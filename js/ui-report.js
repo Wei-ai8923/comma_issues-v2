@@ -108,7 +108,7 @@ async function submitIssue(){
   var dParts=deadlineRaw.split('-');
   var deadline=parseInt(dParts[1])+'月'+parseInt(dParts[2])+'號';
   var keyResult=document.getElementById('f-key-result').value.trim();
-  if(!keyResult){toast('\u8acb\u586b\u5beb\u95dc\u9375\u6210\u679c','err');return;}
+  if(!keyResult){toast('請填寫具體需要的幫助','err');return;}
   var tagsCustom=selTags.indexOf('其他')>=0?document.getElementById('f-tag-other').value.trim():'';
   var btn=document.getElementById('submit-btn');
   btn.disabled=true; btn.textContent='提報中...';
