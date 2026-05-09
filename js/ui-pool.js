@@ -165,7 +165,7 @@ function openIssueDetail(id){
     +'<b>'+issue.unit+'</b><span style="font-size:12px;color:var(--tx3);margin-left:auto">'+fmtDate(d)+'</span></div>'
     +'<div style="font-size:15px;line-height:1.7;margin-bottom:10px">'+issue.content+'</div>'
     +(issue.deadline?'<div style="margin-bottom:6px;font-size:13px"><span style="color:var(--tx3)">📅 期望解決：</span><b>'+issue.deadline+'</b></div>':'')
-    +(issue.keyResult?'<div style="margin-bottom:10px;font-size:13px"><span style="color:var(--tx3)">🎯 關鍵成果：</span><b>'+issue.keyResult+'</b></div>':'')
+    +(issue.keyResult?'<div style="margin-bottom:10px;font-size:13px"><span style="color:var(--tx3)">🎯 需要的具體幫助：</span><b>'+issue.keyResult+'</b></div>':'')
     +'<div style="display:flex;gap:10px">'
     +'<span style="font-size:13px;background:var(--bg3);padding:4px 10px;border-radius:8px">緊急 <b>'+issue.urgency+'/5</b></span>'
     +'<span style="font-size:13px;background:var(--bg3);padding:4px 10px;border-radius:8px">重要 <b>'+issue.importance+'/5</b></span>'
