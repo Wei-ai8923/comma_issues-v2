@@ -19,6 +19,7 @@ async function refreshAndRender(name){
   if(name==='process') renderProcess();
   if(name==='dash') renderDash();
   if(name==='resolved') renderResolved();
+  if(name==='table') renderTable();
 }
 
 // ── STATS (shared) ──
