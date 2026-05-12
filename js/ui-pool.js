@@ -42,7 +42,16 @@ function renderPool(){
     });
     TAGS.forEach(function(t){
       if(tagGroups[t]&&tagGroups[t].length){
-        tagGroups[t].sort(function(a,b){return (b.urgency-a.urgency)||( b.importance-a.importance);});
+        tagGroups[t].sort(function(a,b){
+          var da=getDeadlineInfo(a.deadline||'').diff;
+          var db=getDeadlineInfo(b.deadline||'').diff;
+          // 沒設定日期的放最後
+          if(da===null && db===null) return (b.urgency-a.urgency)||(b.importance-a.importance);
+          if(da===null) return 1;
+          if(db===null) return -1;
+          // 天數越少越緊迫，相同則比緊急、重要
+          return (da-db) || (b.urgency-a.urgency) || (b.importance-a.importance);
+        });
         colsEl.appendChild(buildPoolCol(t,tagGroups[t]));
       }
     });
@@ -76,6 +85,14 @@ function buildPoolCard(issue){
   card.appendChild(top);
   // Content
   var ct=document.createElement('div'); ct.className='pcard-content'; ct.textContent=issue.content; card.appendChild(ct);
+  // Deadline badge
+  if(issue.deadline){
+    var di=getDeadlineInfo(issue.deadline);
+    var dlBadge=document.createElement('div');
+    dlBadge.className='pcard-deadline'+(di.danger?' deadline-danger':'');
+    dlBadge.textContent='📅 '+issue.deadline+'　'+di.label;
+    card.appendChild(dlBadge);
+  }
   // Footer
   var ft=document.createElement('div'); ft.className='pcard-footer';
   var sc=document.createElement('span'); sc.className='pcard-scores'; sc.textContent='緊急'+issue.urgency+' 重要'+issue.importance; ft.appendChild(sc);
@@ -152,7 +169,8 @@ function openIssueDetail(id){
   var actionBtns='';
   if(!issue.confirmedResolved){
     if(issue.claimedBy && issue.claimedBy.length > 0){
-      actionBtns='<div style="margin-top:14px;padding:10px;background:var(--bg3);border-radius:var(--rs);font-size:13px;color:var(--tx2);text-align:center">▶ <b>'+issue.claimedBy[0]+'</b> 認領處理中</div>';
+      actionBtns='<div style="margin-top:14px;padding:10px;background:var(--bg3);border-radius:var(--rs);font-size:13px;color:var(--tx2);text-align:center">▶ <b>'+issue.claimedBy[0]+'</b> 認領處理中</div>'
+        +'<button class="btn btn-sm" style="width:100%;margin-top:8px;background:#fff;border:1.5px solid var(--bl);color:var(--bl)" onclick="openReassignModal()">🔄 更換負責人</button>';
     } else {
       actionBtns='<button class="btn btn-gn" onclick="openClaimModal()" style="margin-top:14px;width:100%">選擇解決這題的分校</button>';
     }
@@ -322,6 +340,46 @@ function openClaimModal(){
     grp.appendChild(grid); body.appendChild(grp);
   });
   openModal('modal-claim');
+}
+
+
+function openReassignModal(){
+  // 直接重用 claim modal，但按鈕走 reassignClaim
+  openClaimModal();
+  // 把 modal 標題和按鈕改成「更換負責人」
+  var hd=document.querySelector('#modal-claim .modal-hd span');
+  if(hd) hd.textContent='更換負責人';
+  var btn=document.getElementById('claim-confirm-btn');
+  if(btn){
+    btn.textContent='確認更換';
+    btn.onclick=reassignClaim;
+  }
+}
+
+async function reassignClaim(){
+  if(!claimSelUnit){toast('請選擇新的負責分校','err');return;}
+  var issue=issues.find(function(i){return i.id===activeIssueId;});
+  if(!issue) return;
+  var btn=document.getElementById('claim-confirm-btn');
+  btn.disabled=true; btn.textContent='處理中...';
+  // 直接覆蓋 claimedBy
+  var newClaimed=[claimSelUnit];
+  try{
+    await patchDB(issue.id,{claimedBy:newClaimed});
+    issue.claimedBy=newClaimed;
+    toast('已更換為 '+claimSelUnit,'ok');
+    closeModal('modal-claim');
+    closeModal('modal-issue-detail');
+    renderPool(); renderProcess(); updateTabBadges();
+    // 還原原本按鈕
+    btn.disabled=false; btn.textContent='確認認領';
+    btn.onclick=confirmClaim;
+    var hd=document.querySelector('#modal-claim .modal-hd span');
+    if(hd) hd.textContent='選擇解決這題的分校';
+  }catch(e){
+    toast('更換失敗：'+e.message,'err');
+    btn.disabled=false; btn.textContent='確認更換';
+  }
 }
 
 async function confirmClaim(){

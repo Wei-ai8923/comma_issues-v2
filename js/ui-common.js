@@ -77,3 +77,29 @@ init();
 function handleOverlayClick(e, modalId){
   if(e.target === e.currentTarget) closeModal(modalId);
 }
+
+// ── DEADLINE INFO ──
+function getDeadlineInfo(deadlineStr){
+  // 解析「6月15號」格式
+  if(!deadlineStr) return {label:'未設定', diff:null, danger:false, overdue:false};
+  var m = deadlineStr.match(/(\d+)月(\d+)/);
+  if(!m) return {label:deadlineStr, diff:null, danger:false, overdue:false};
+  var today = new Date();
+  today.setHours(0,0,0,0);
+  var year = today.getFullYear();
+  var deadline = new Date(year, parseInt(m[1])-1, parseInt(m[2]));
+  // 如果月份已過，可能是明年的
+  if(deadline.getTime() < today.getTime() - 180*24*3600*1000){
+    deadline.setFullYear(year+1);
+  }
+  var diff = Math.round((deadline.getTime() - today.getTime()) / (24*3600*1000));
+  if(diff < 0){
+    return {label:'已延宕 '+Math.abs(diff)+' 天', diff:diff, danger:true, overdue:true};
+  } else if(diff === 0){
+    return {label:'今天到期', diff:0, danger:true, overdue:false};
+  } else if(diff <= 3){
+    return {label:'剩餘 '+diff+' 天', diff:diff, danger:true, overdue:false};
+  } else {
+    return {label:'剩餘 '+diff+' 天', diff:diff, danger:false, overdue:false};
+  }
+}

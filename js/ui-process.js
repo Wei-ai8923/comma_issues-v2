@@ -6,6 +6,16 @@ function renderProcess(){
   ALL_BRANCHES.forEach(function(b){
     var myI=issues.filter(function(i){return !i.confirmedResolved&&i.claimedBy&&i.claimedBy.indexOf(b)>=0;});
     if(!myI.length) return;
+    // 排序：延宕最多→延宕少→剩餘最少→剩餘最多
+    myI.sort(function(a,b){
+      var da=getDeadlineInfo(a.deadline||'').diff;
+      var db=getDeadlineInfo(b.deadline||'').diff;
+      // 沒設定日期的放最後
+      if(da===null && db===null) return 0;
+      if(da===null) return 1;
+      if(db===null) return -1;
+      return da - db; // diff 越小越緊迫
+    });
     hasSth=true;
     var card=document.createElement('div'); card.className='proc-card';
     var hd=document.createElement('div'); hd.className='proc-card-hd';
@@ -22,7 +32,17 @@ function renderProcess(){
       var mySol=sols.find(function(s){return s.unit===b;});
       var mt=document.createElement('div');mt.className='proc-issue-meta';
       mt.textContent='提報：'+issue.unit+(mySol?'　✏ 已有解法':'　點擊輸入解法');
-      item.appendChild(ct);item.appendChild(mt);card.appendChild(item);
+      item.appendChild(ct);item.appendChild(mt);
+      // Deadline badge
+      if(issue.deadline){
+        var di=getDeadlineInfo(issue.deadline);
+        var dlBadge=document.createElement('div');
+        dlBadge.className='pcard-deadline'+(di.danger?' deadline-danger':'');
+        dlBadge.style.marginTop='6px';
+        dlBadge.textContent='📅 '+issue.deadline+'　'+di.label;
+        item.appendChild(dlBadge);
+      }
+      card.appendChild(item);
     });
     grid.appendChild(card);
   });
@@ -36,8 +56,20 @@ function openSolutionModal(id,claimUnit){
   if(!issue) return;
   var sols=issue.solutions||[];
   var mySol=sols.find(function(s){return s.unit===claimUnit;});
-  document.getElementById('sol-issue-title').textContent=issue.content.slice(0,60)+(issue.content.length>60?'...':'');
+  document.getElementById('sol-issue-title').textContent=issue.content;
   document.getElementById('sol-unit-name').textContent=claimUnit+' 的解法';
+  // 完整資訊
+  var metaHtml='';
+  if(issue.deadline){
+    var info=getDeadlineInfo(issue.deadline);
+    var color=info.danger?'var(--rd)':'var(--tx2)';
+    metaHtml+='<div>📅 <b>期望解決：</b>'+issue.deadline+' <span style="color:'+color+';font-weight:700">（'+info.label+'）</span></div>';
+  }
+  if(issue.keyResult){
+    metaHtml+='<div>🎯 <b>需要的具體幫助：</b>'+issue.keyResult+'</div>';
+  }
+  metaHtml+='<div>⚠️ <b>緊急度：</b>'+issue.urgency+'/5 　 <b>重要性：</b>'+issue.importance+'/5</div>';
+  document.getElementById('sol-issue-meta').innerHTML=metaHtml;
   document.getElementById('sol-input').value=mySol?mySol.text:'';
   // Show existing files
   var existFiles=mySol?mySol.files||[]:[];
